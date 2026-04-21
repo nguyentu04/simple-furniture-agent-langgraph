@@ -2,24 +2,71 @@ from state import AgentState
 
 
 def analyze_intent(state: AgentState):
-    user_text = state["user_input"].lower()
+    user_text = state["user_input"].lower().strip()
 
-    if "refund" in user_text or "hoàn tiền" in user_text:
+    refund_keywords = [
+        "refund",
+        "hoàn tiền",
+        "trả hàng",
+        "đổi trả",
+    ]
+
+    product_search_keywords = [
+    "sofa",
+    "chair",
+    "table",
+    "bàn",
+    "giường",
+    "bed",
+    "desk",
+    "tủ",
+    "cabinet",
+    "ghế",
+    "kệ",
+    "sản phẩm",
+    "tìm sản phẩm",
+    "mua",
+    "mua hàng",
+    "nội thất",
+]
+
+    payment_keywords = [
+        "payment",
+        "thanh toán",
+        "trả tiền",
+        "pay",
+    ]
+
+    general_keywords = [
+        "hi",
+        "hello",
+        "xin chào",
+        "chào",
+        "hey",
+        "bạn là ai",
+        "giúp tôi",
+        "hỗ trợ",
+    ]
+
+    if any(keyword in user_text for keyword in refund_keywords):
         return {"intent": "refund"}
 
-    elif "sofa" in user_text or "chair" in user_text or "table" in user_text or "bàn" in user_text or "giường" in user_text:
+    elif any(keyword in user_text for keyword in product_search_keywords):
         return {"intent": "product_search"}
 
-    elif "payment" in user_text or "thanh toán" in user_text:
+    elif any(keyword in user_text for keyword in payment_keywords):
         return {"intent": "payment_support"}
 
-    else:
+    elif any(keyword in user_text for keyword in general_keywords):
         return {"intent": "general"}
+
+    else:
+        return {"intent": "unknown_request"}
 
 
 def respond_general(state: AgentState):
     return {
-        "tool_result": "User is asking a general question. No external tool is needed."
+        "tool_result": "General conversation detected."
     }
 
 
@@ -43,6 +90,12 @@ def handle_payment(state: AgentState):
     }
 
 
+def handle_unknown_request(state: AgentState):
+    return {
+        "tool_result": "The request is unclear or not supported yet."
+    }
+
+
 def finalize_response(state: AgentState):
     intent = state["intent"]
     tool_result = state["tool_result"]
@@ -59,8 +112,11 @@ def finalize_response(state: AgentState):
     elif intent == "payment_support":
         final_text = f"Tôi có thể hỗ trợ vấn đề thanh toán. {tool_result}"
 
+    elif intent == "unknown_request":
+        final_text = "Xin lỗi, hiện tôi chưa hiểu rõ yêu cầu của bạn. Bạn có thể nói rõ hơn về việc bạn muốn tìm sản phẩm, thanh toán hay hoàn tiền không?"
+
     else:
-        final_text = "Xin lỗi, tôi chưa hiểu yêu cầu của bạn."
+        final_text = "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu của bạn."
 
     return {
         "final_response": final_text
@@ -82,4 +138,7 @@ def route_by_intent(state: AgentState):
     elif intent == "payment_support":
         return "handle_payment"
 
-    return "respond_general"
+    elif intent == "unknown_request":
+        return "handle_unknown_request"
+
+    return "handle_unknown_request"
